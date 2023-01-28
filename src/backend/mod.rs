@@ -204,6 +204,8 @@ pub struct Datum {
 
     /// Longer explanatory message on how to resolve problems.
     pub mesg: Option<String>,
+
+    pub data: Vec<Datum>,
 }
 
 pub trait Keep {

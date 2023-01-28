@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
-use crate::backend::{Backend, BACKENDS};
+use crate::backend::{Backend, Datum, BACKENDS};
 
 use std::fmt::{self, Formatter};
 use std::ops::Deref;
@@ -99,6 +99,31 @@ impl fmt::Display for Info<'_> {
             }
         }
 
+        fn write_specs(
+            data: &Vec<Datum>,
+            is_atty: bool,
+            whitespaces: i32,
+            f: &mut Formatter<'_>,
+        ) -> Result<(), fmt::Error> {
+            for datum in data {
+                let icon = get_icon(is_atty, datum.pass);
+                for _ in 0..whitespaces {
+                    write!(f, " ")?;
+                }
+
+                write!(f, "  {} {}", icon, datum.name)?;
+
+                if let Some(ref info) = datum.info {
+                    write!(f, ": {info}")?;
+                }
+                writeln!(f)?;
+
+                write_specs(&datum.data, is_atty, whitespaces + 1, f)?;
+            }
+
+            write!(f, "")
+        }
+
         let is_atty = atty::is(atty::Stream::Stdout);
         let backends = self.backends;
 
@@ -113,15 +138,7 @@ impl fmt::Display for Info<'_> {
 
             writeln!(f, "{} Backend: {}", icon, backend.name())?;
 
-            for datum in &data {
-                let icon = get_icon(is_atty, datum.pass);
-                write!(f, "  {} {}", icon, datum.name)?;
-
-                if let Some(ref info) = datum.info {
-                    write!(f, ": {info}")?;
-                }
-                writeln!(f)?;
-            }
+            write_specs(&data, is_atty, 0, f)?;
 
             for datum in &data {
                 if let Some(mesg) = datum.mesg.as_ref() {
