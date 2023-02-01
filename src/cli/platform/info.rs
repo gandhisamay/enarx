@@ -250,39 +250,38 @@ mod test {
         }
 
         let expected_json_output = json! ({
-
           "backend": "dummy",
           "data": [
             {
               "name": "Driver",
               "pass": true,
               "info": "/dev/dummy",
-              "mesg": null,
+              "mesg": None::<String>,
               "data": [
                 {
                   "name": "Dummy Driver",
                   "pass": false,
                   "info": "driver",
-                  "mesg": null,
+                  "mesg": None::<String>,
                   "data": []
                 },
                 {
                   "name": "Dummy Backend",
                   "pass": false,
-                  "info": null,
-                  "mesg": null,
+                  "info": None::<String>,
+                  "mesg": None::<String>,
                   "data": [
                     {
                       "name": "Dummy Backend",
                       "pass": false,
-                      "info": null,
-                      "mesg": null,
+                      "info": None::<String>,
+                      "mesg": None::<String>,
                       "data": [
                         {
                           "name": "Dummy Backend",
                           "pass": false,
-                          "info": null,
-                          "mesg": null,
+                          "info": None::<String>,
+                          "mesg": None::<String>,
                           "data": []
                         }
                       ]
@@ -294,15 +293,15 @@ mod test {
             {
               "name": "Dummy Backend",
               "pass": false,
-              "info": null,
-              "mesg": null,
+              "info": None::<String>,
+              "mesg": None::<String>,
               "data": []
             },
             {
               "name": "Dummy Backend",
               "pass": false,
-              "info": null,
-              "mesg": null,
+              "info": None::<String>,
+              "mesg": None::<String>,
               "data": []
             }
           ]
@@ -310,14 +309,9 @@ mod test {
 
         let dummy_instance: Lazy<Box<dyn Backend>> = Lazy::new(|| Box::new(Dummy {}));
 
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&dummy_instance.deref()).unwrap()
-        );
-
         assert_eq!(
-            serde_json::to_string_pretty(&dummy_instance.deref()).unwrap(),
-            serde_json::to_string_pretty(&expected_json_output).unwrap(),
+            serde_json::to_value(&dummy_instance.deref()).unwrap(),
+            expected_json_output,
             "Platform info json output test failed"
         );
     }
