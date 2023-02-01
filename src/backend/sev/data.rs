@@ -60,13 +60,27 @@ pub fn has_crl_cache() -> Result<Datum, Datum> {
         }
     }
 
-    Ok(Datum {
-        name: NAME.to_string(),
-        pass: true,
-        info: path.to_string_lossy().into_owned().into(),
-        mesg: None,
-        data: vec![],
-    })
+    if let Some(next_update) = crls.next_update() {
+        Ok(Datum {
+            name: NAME.to_string(),
+            pass: true,
+            info: Some(format!(
+                "{}, next update {}",
+                path.to_string_lossy().into_owned(),
+                next_update
+            )),
+            mesg: None,
+            data: vec![],
+        })
+    } else {
+        Ok(Datum {
+            name: NAME.to_string(),
+            pass: true,
+            info: path.to_string_lossy().into_owned().into(),
+            mesg: None,
+            data: vec![],
+        })
+    }
 }
 
 pub fn has_vcek_cache() -> Datum {

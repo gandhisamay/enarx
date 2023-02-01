@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
+
 #![cfg(any(
     all(test, target_arch = "x86_64", target_os = "linux"),
     target_vendor = "unknown"
 ))]
+
 //! The SEV shim
 //!
 //! This crate contains the system/kernel that handles the syscalls (and cpuid instructions)
@@ -48,7 +50,7 @@ pub mod snp;
 pub mod spin;
 pub mod sse;
 pub mod syscall;
-pub mod usermode;
+pub mod thread;
 
 extern "C" {
     /// Extern
@@ -63,25 +65,15 @@ extern "C" {
     pub static _ENARX_CPUID: CpuidPage;
 }
 
+/// Maximum virtual cpus supported
+pub const MAX_NUM_CPUS: usize = 512;
+
 /// The virtual address of the main kernel stack
 pub const SHIM_STACK_START: u64 = 0xFFFF_FF48_4800_0000;
 
 /// The size of the main kernel stack
 #[allow(clippy::integer_arithmetic)]
 pub const SHIM_STACK_SIZE: u64 = bytes![2; MiB];
-
-/// The virtual address of the exception kernel stacks
-pub const SHIM_EX_STACK_START: u64 = 0xFFFF_FF48_F000_0000;
-
-/// The size of the main kernel stack for exceptions
-#[allow(clippy::integer_arithmetic)]
-pub const SHIM_EX_STACK_SIZE: u64 = {
-    if cfg!(feature = "gdb") {
-        bytes![2; MiB]
-    } else {
-        bytes![32; KiB]
-    }
-};
 
 /// Exec virtual address, where the elf binary is mapped to, plus a random offset
 const EXEC_ELF_VIRT_ADDR_BASE: VirtAddr = VirtAddr::new_truncate(0x7f00_0000_0000);

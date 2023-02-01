@@ -15,7 +15,7 @@ pub mod nil;
 mod binary;
 
 #[cfg(enarx_with_shim)]
-mod probe;
+pub(crate) mod probe;
 
 #[cfg(enarx_with_shim)]
 mod parking;
@@ -191,7 +191,7 @@ impl Serialize for dyn Backend {
     }
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub struct Datum {
     /// The name of this datum.
     pub name: String,

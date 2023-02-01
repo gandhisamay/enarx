@@ -3,12 +3,12 @@
 //! Functions dealing with the exec
 
 use crate::addr::{ShimPhysAddr, TranslateFrom};
-use crate::allocator::ALLOCATOR;
+use crate::allocator::PageTableAllocatorLock;
 use crate::paging::SHIM_PAGETABLE;
 use crate::random::random;
 use crate::shim_stack::init_stack_with_guard;
 use crate::snp::cpuid;
-use crate::usermode::usermode;
+use crate::thread::usermode;
 use crate::{
     EXEC_BRK_VIRT_ADDR_BASE, EXEC_ELF_VIRT_ADDR_BASE, EXEC_STACK_SIZE, EXEC_STACK_VIRT_ADDR_BASE,
 };
@@ -28,12 +28,12 @@ use x86_64::{PhysAddr, VirtAddr};
 pub static EXEC_READY: AtomicBool = AtomicBool::new(false);
 
 /// The randomized virtual address of the exec
-#[cfg(not(feature = "gdb"))]
+#[cfg(not(any(feature = "gdb", feature = "dbg")))]
 pub static EXEC_VIRT_ADDR: Lazy<RwLock<VirtAddr>> =
     Lazy::new(|| RwLock::new(EXEC_ELF_VIRT_ADDR_BASE + (random() & 0x7F_FFFF_F000)));
 
 /// The non-randomized virtual address of the exec in case the gdb feature is active
-#[cfg(feature = "gdb")]
+#[cfg(any(feature = "gdb", feature = "dbg"))]
 pub static EXEC_VIRT_ADDR: Lazy<RwLock<VirtAddr>> =
     Lazy::new(|| RwLock::new(EXEC_ELF_VIRT_ADDR_BASE));
 
@@ -89,18 +89,20 @@ fn map_elf(app_virt_start: VirtAddr) -> &'static Header {
 
         debug_assert_eq!(ph.p_align % Page::<Size4KiB>::SIZE, 0);
 
-        ALLOCATOR
-            .lock()
-            .map_memory(
-                map_from,
-                map_to,
-                (ph.p_memsz + voff) as _,
-                page_table_flags,
-                PageTableFlags::PRESENT
-                    | PageTableFlags::USER_ACCESSIBLE
-                    | PageTableFlags::WRITABLE,
-            )
-            .expect("Map exec elf failed!");
+        // Safe, because this is the only place mapping the memory of the executable
+        unsafe {
+            PageTableAllocatorLock::new()
+                .map_memory(
+                    map_from,
+                    map_to,
+                    (ph.p_memsz + voff) as _,
+                    page_table_flags,
+                    PageTableFlags::PRESENT
+                        | PageTableFlags::USER_ACCESSIBLE
+                        | PageTableFlags::WRITABLE,
+                )
+                .expect("Map exec elf failed!")
+        };
     }
 
     header
